@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './Login.css';
+import axios from "axios"
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,24 +10,17 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const url = isLogin ? 'http://127.0.0.1:5000/auth/api/auth/login' : 'http://127.0.0.1:5000/auth/api/auth/signup';
+    const url = isLogin ? 'http://localhost:8000/auth/login' : 'http://localhost:8000/auth/signup';
     const data = isLogin ? { email, password } : { email, password, username };
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    });
-
+    const response = await axios.post(url, data);
+  
     if (!response.ok) {
       const errorMessage = await response.text();
       console.error('Error:', errorMessage);
       return;
     }
-
-    const result = await response.json();
+    const result = response.data
     console.log(result);
   };
 
