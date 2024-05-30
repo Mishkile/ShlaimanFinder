@@ -1,20 +1,21 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from sqlalchemy.orm import DeclarativeBase
-from .extensions import db, login_manager, mail
+from .extensions import db, login_manager, mail, migrate
 from datetime import timedelta
-
+import os
 
 class Base(DeclarativeBase):
   pass
 
 def create_app():
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'your_secret_key'
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'
+    app = Flask(__name__, static_folder='static', static_url_path='')
+    app.config['SECRET_KEY'] = 'zubur123'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///shlaimanSQL.db'
     app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=7)
     app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=180)
+    app.config['UPLOAD_FOLDER'] = os.path.join(app.root_path, 'static/profile_pics')
 
     # Flask-Mail configuration
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
@@ -28,16 +29,22 @@ def create_app():
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'
     mail.init_app(app)
+    migrate.init_app(app, db)
 
     from .auth import auth as auth_blueprint
-    app.register_blueprint(auth_blueprint)
+    app.register_blueprint(auth_blueprint, url_prefix='/')
 
     from .routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
-    # with app.app_context():
-    #     db.create_all()
+    @app.route('/')
+    def index():
+        return app.send_static_file('auth.html')
 
+    with app.app_context():
+        db.create_all()
+
+    context = ('cert.pem', 'key.pem')  # Paths to your certificate and key files
     return app
 
 @login_manager.user_loader
